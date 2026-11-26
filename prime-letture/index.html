@@ -180,9 +180,9 @@ h2.st{font-size:27px;line-height:1.1;margin:0 0 12px;text-wrap:balance;font-weig
 var LV={1:{nome:"FACILE",tot:24},2:{nome:"MEDIO",tot:18},3:{nome:"SFIDA",tot:18}};
 var AMICI=[{k:"nina",n:"NINA",soglia:15},{k:"teo",n:"TEO",soglia:30},{k:"mia",n:"MIA",soglia:45},{k:"pino",n:"PINO",soglia:60}];
 var KEY="ada-prime-letture-v1";
-var S={fatte:{},nome:"",lento:false};
+var S={fatte:{},nome:"",lento:false,ok:false};
 var prova=false;
-try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&typeof o==="object"){S.fatte=o.fatte||{};S.nome=o.nome||"";S.lento=!!o.lento;}}}catch(e){}
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&typeof o==="object"){S.fatte=o.fatte||{};S.nome=o.nome||"";S.lento=!!o.lento;S.ok=!!o.ok;}}}catch(e){}
 function salva(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 var app=document.getElementById("app");
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
@@ -371,9 +371,25 @@ function vGenitori(){
   document.getElementById("si").onclick=function(){S.fatte={};S.nome="";salva();document.getElementById("conf").innerHTML='<p>Fatto: le stelle sono a zero.</p>';};
   document.getElementById("no").onclick=function(){document.getElementById("conf").innerHTML="";};};
 }
+
+/* ---------- codice del libro ---------- */
+var CODICI=[[3,"TANTO"],[4,"CAPPELLO"],[5,"ROSSA"],[7,"GIORNO"],[9,"UCCELLINO"],[10,"PALLA"],[11,"PORTA"],[12,"SPEGNE"],[13,"TETTO"],[16,"CONIGLIO"],[17,"SCRIVERE"],[21,"COLORATI"],[22,"TOPOLINO"],[26,"SVEGLIA"],[27,"CORSA"],[28,"SEGRETO"],[29,"SEGRETA"],[31,"SCUOLA"],[33,"PRATO"],[36,"COMPITO"],[38,"LONTANO"],[39,"BISCOTTI"],[42,"VECCHIA"],[45,"NONNA"],[46,"GIARDINO"],[49,"OROLOGIO"],[50,"TORTE"],[51,"TANTISSIMO"],[52,"FORTE"],[54,"STRANO"],[57,"SPECIALE"],[58,"SPAZZATURA"],[59,"ORDINE"]];
+var qi=Math.floor(Math.random()*CODICI.length);
+function norm(x){return String(x||"").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z]/g,"");}
+function vSblocca(){
+ var c=CODICI[qi];
+ app.innerHTML='<header class="hero"><div class="stars-bg"></div><img src="img/copertina.webp" alt="Copertina del libro Prime Letture"><div><p class="eb">IL BONUS DEL LIBRO</p><h1>PRIME LETTURE</h1><p class="sub">ASCOLTA LE STORIE E RACCOGLI LE STELLE.</p></div></header>'+
+ '<div class="gen" style="margin-top:20px"><h3>Benvenuti! Una domanda per i genitori</h3><p>Questo bonus è riservato a chi ha il libro. Aprite il libro alla <b>storia '+c[0]+'</b> e scrivete qui <b>l’ultima parola della prima frase</b> della storia (subito sotto il titolo). Basta farlo una volta sola.</p>'+
+ '<form id="fs" class="field" style="margin-top:14px" autocomplete="off"><label for="cod">Ultima parola della prima frase della storia '+c[0]+'</label><input id="cod" autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="row" style="margin-top:4px"><button class="btn" type="submit">Apri il bonus</button><button class="btn soft" type="button" id="altra">Un’altra domanda</button></div><p class="note" id="esito" aria-live="polite"></p></form></div>';
+ document.getElementById("fs").onsubmit=function(e){e.preventDefault();
+  if(norm(document.getElementById("cod").value)===c[1]){S.ok=true;salva();route();}
+  else{document.getElementById("esito").textContent="Non è la parola giusta. Controllate la storia "+c[0]+": è l’ultima parola della prima frase, prima del punto.";}};
+ document.getElementById("altra").onclick=function(){qi=(qi+1+Math.floor(Math.random()*(CODICI.length-1)))%CODICI.length;vSblocca();};
+}
 function route(){
  ferma();
  var h=(location.hash||"#home").slice(1),m;
+ if(!S.ok&&h!=="genitori"){vSblocca();window.scrollTo(0,0);return;}
  if((m=h.match(/^storia-(\d+)$/)))vStoria(+m[1]);
  else if((m=h.match(/^storie-([123])$/)))vElenco(+m[1]);
  else if(h==="stelle")vStelle();
