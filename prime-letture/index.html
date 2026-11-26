@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Prime Letture Bonus</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: una colonna stretta come una pagina del libro; testata notte-viola come la copertina, pagine color carta. */
+@font-face{font-family:"Andika";font-weight:700;font-display:swap;src:url(fonts/andika-bold.woff2) format("woff2")}
+@font-face{font-family:"Fredoka";font-weight:300 700;font-display:swap;src:url(fonts/fredoka.woff2) format("woff2")}
+:root{
+  --paper:#fdf8f0; --card:#ffffff; --ink:#2a2150; --muted:#6c6391; --line:#ebe2d2;
+  --night:#2b1d5c; --night2:#4a2f8f; --moon:#ffcf3f; --hl:#ffe680; --hlink:#2a2150; --rowhl:#fff3c4;
+  --l1:#22a593; --l2:#e05b8f; --l3:#7b5cd6; --ok:#2b9a57; --no:#d2553f; --lock:#d9d2c4;
+  --f-title:"Fredoka","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-read:"Andika","Verdana",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#17112e; --card:#221946; --ink:#f3eeff; --muted:#b5aadb; --line:#3a2e68;
+  --hl:#ffd84d; --hlink:#1d1440; --rowhl:#33285e; --lock:#3d335f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#17112e; --card:#221946; --ink:#f3eeff; --muted:#b5aadb; --line:#3a2e68;
+  --hl:#ffd84d; --hlink:#1d1440; --rowhl:#33285e; --lock:#3d335f; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--paper)}
+body{color:var(--ink);font-family:var(--f-title);font-size:17px;line-height:1.4;margin:0;-webkit-tap-highlight-color:transparent}
+#app{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--moon);outline-offset:3px;border-radius:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* testata */
+.hero{background:radial-gradient(120% 90% at 85% 10%,var(--night2),var(--night));color:#fff;margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px))) 0;padding:22px max(16px,env(safe-area-inset-left,0px)) 26px;border-radius:0 0 28px 28px;display:grid;grid-template-columns:110px 1fr;gap:16px;align-items:center;position:relative;overflow:hidden}
+.hero img{width:110px;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.35);transform:rotate(-3deg)}
+.hero .eb{font-weight:600;letter-spacing:.12em;font-size:12px;color:var(--moon);margin:0}
+.hero h1{font-weight:700;font-size:30px;line-height:1.02;margin:4px 0 6px;text-wrap:balance}
+.hero p.sub{margin:0;font-size:15px;opacity:.9}
+.stars-bg{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(2px 2px at 20% 30%,#fff8,transparent),radial-gradient(1.5px 1.5px at 70% 20%,#fff9,transparent),radial-gradient(2px 2px at 90% 70%,#fff6,transparent),radial-gradient(1.5px 1.5px at 45% 85%,#fff7,transparent)}
+
+.bigs{display:grid;gap:14px;margin:22px 0}
+.big{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;text-decoration:none;background:var(--card);border:2px solid var(--line);border-radius:22px;padding:14px 16px}
+.big .ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.big b{display:block;font-size:21px;font-weight:700;letter-spacing:.01em}
+.big small{display:block;color:var(--muted);font-size:14px;font-weight:500}
+.big .go{font-size:26px;color:var(--muted)}
+.ic.lis{background:var(--l1)}.ic.sta{background:var(--moon);color:var(--night)}
+h2.sec{font-size:15px;letter-spacing:.1em;color:var(--muted);font-weight:600;margin:26px 0 10px}
+.friends{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sticker{text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
+.sticker .face{aspect-ratio:1;max-width:100%;border-radius:50%;overflow:hidden;border:4px solid #fff;box-shadow:0 3px 10px rgba(43,29,92,.18);background:var(--lock);position:relative}
+.sticker .face img{width:100%;height:100%;object-fit:cover;display:block}
+.sticker.locked .face img{filter:grayscale(1) brightness(1.6) contrast(.5);opacity:.45}
+.sticker.locked .face::after{content:attr(data-n);position:absolute;inset:0;display:grid;place-items:center;font-size:22px;font-weight:700;color:var(--muted)}
+.sticker b{display:block;color:var(--ink);font-size:15px;margin-top:4px}
+.parents-link{display:block;text-align:center;margin:28px 0 0;color:var(--muted);font-size:15px}
+
+/* barra in alto */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);display:flex;align-items:center;gap:10px;padding:12px 0 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.back{border:0;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:6px 12px;font-weight:600;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.bar .t{font-weight:700;font-size:18px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-block;color:#fff;border-radius:999px;padding:3px 11px;font-size:13px;font-weight:700;letter-spacing:.06em;white-space:nowrap}
+.bg1{background:var(--l1)}.bg2{background:var(--l2)}.bg3{background:var(--l3)}
+
+/* elenco */
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.tab{border:2px solid var(--line);background:var(--card);border-radius:16px;padding:8px 4px;text-align:center;text-decoration:none;font-weight:700;font-size:15px;line-height:1.15}
+.tab small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.tab.on{color:#fff;border-color:transparent}.tab.on.bg1{background:var(--l1)}.tab.on.bg2{background:var(--l2)}.tab.on.bg3{background:var(--l3)}.tab.on small{color:#fffd}
+.list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.item{text-decoration:none;background:var(--card);border:2px solid var(--line);border-radius:18px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.item img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.item .tx{padding:8px 10px 10px}
+.item .n{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em}
+.item .ti{font-family:var(--f-read);font-weight:700;font-size:14px;line-height:1.2}
+.item .done{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;background:var(--moon);display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+
+/* storia */
+.ill{width:100%;aspect-ratio:1;border-radius:22px;overflow:hidden;box-shadow:0 0 0 5px var(--card),0 6px 18px rgba(43,29,92,.15);margin:4px 0 14px}
+.ill img{width:100%;height:100%;object-fit:cover;display:block}
+h2.st{font-size:27px;line-height:1.1;margin:0 0 12px;text-wrap:balance;font-weight:700}
+.ctr{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 6px}
+.play{border:0;border-radius:999px;padding:12px 22px 12px 16px;font-weight:700;font-size:19px;color:#fff;display:inline-flex;gap:8px;align-items:center;box-shadow:0 4px 0 rgba(0,0,0,.18)}
+.play:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.seg button{border:0;background:transparent;padding:9px 14px;font-weight:600;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.hint{font-size:13px;color:var(--muted);margin:4px 0 12px}
+.testo{font-family:var(--f-read);font-weight:700;font-size:22px;line-height:1.55;letter-spacing:.02em;background:var(--card);border-radius:20px;padding:14px 16px;border:2px solid var(--line)}
+.testo p{margin:0 0 4px;padding:2px 6px;border-radius:10px;transition:background .2s}
+.testo p.on{background:var(--rowhl)}
+.w{border-radius:6px;padding:0 1px;cursor:pointer}
+.w.on{background:var(--hl);color:var(--hlink);box-shadow:0 0 0 3px var(--hl)}
+.l2 .testo{font-size:20px}.l3 .testo{font-size:19px}
+.dom{margin:16px 0 0;background:var(--card);border:2px dashed var(--line);border-radius:20px;padding:14px 16px}
+.dom .q{font-family:var(--f-read);font-weight:700;font-size:19px;margin:0 0 10px}
+.opts{display:grid;gap:8px}
+.opt{font-family:var(--f-read);font-weight:700;font-size:18px;text-align:left;border:2px solid var(--line);background:var(--paper);border-radius:14px;padding:11px 14px;display:flex;gap:10px;align-items:center}
+.opt .bx{width:22px;height:22px;border-radius:6px;border:2px solid var(--muted);flex:none}
+.opt.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--paper))}.opt.ok .bx{background:var(--ok);border-color:var(--ok)}
+.opt.no{border-color:var(--no);opacity:.6;animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.fb{margin:12px 0 0;font-weight:700;font-size:18px;min-height:1.4em}
+.fb.ok{color:var(--ok)}.fb.no{color:var(--no)}
+.prize{display:flex;gap:12px;align-items:center;background:var(--night);color:#fff;border-radius:18px;padding:12px 14px;margin-top:12px}
+.prize img{width:56px;height:56px;border-radius:50%;border:3px solid #fff}
+.pn{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+.pn a{flex:1;text-align:center}
+.nosup{background:var(--rowhl);border-radius:14px;padding:10px 12px;font-size:14px;margin:0 0 10px}
+
+/* stelle */
+.count{display:flex;align-items:center;gap:16px;background:var(--night);color:#fff;border-radius:24px;padding:18px 20px;position:relative;overflow:hidden}
+.count .num{font-size:52px;font-weight:700;line-height:1;color:var(--moon);font-variant-numeric:tabular-nums}
+.count .num small{font-size:20px;color:#fffb}
+.count p{margin:0;font-size:16px}
+.lvbars{display:grid;gap:10px;margin:16px 0 4px}
+.lvb{display:grid;grid-template-columns:96px 1fr 56px;gap:10px;align-items:center;font-weight:600;font-size:14px}
+.lvb .tr{height:14px;border-radius:999px;background:var(--lock);overflow:hidden}
+.lvb .tr i{display:block;height:100%;border-radius:999px}
+.lvb .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.dots{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px}
+.dot{aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;text-decoration:none;background:var(--lock);color:var(--muted);font-variant-numeric:tabular-nums}
+.dot.y{background:var(--moon);color:var(--night)}
+.dips{display:grid;gap:10px}
+.dip{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;text-decoration:none}
+.dip .md{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none}
+.dip b{display:block;font-size:17px}.dip small{color:var(--muted);font-size:14px}
+.dip.locked{opacity:.65}
+.dip .md.lk{background:var(--lock);color:var(--muted)}
+
+/* diploma */
+.field{display:grid;gap:6px;margin:4px 0 16px;font-weight:600}
+.field input{font:inherit;font-family:var(--f-read);font-size:22px;text-transform:uppercase;padding:10px 14px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+.diploma{background:#fffdf6;color:#2a2150;border-radius:16px;padding:14px;box-shadow:0 8px 24px rgba(43,29,92,.18)}
+.diploma .in{border:3px solid var(--dc,#7b5cd6);border-radius:12px;padding:22px 16px;text-align:center;position:relative;outline:2px dashed var(--dc,#7b5cd6);outline-offset:-10px}
+.diploma .k{font-size:13px;letter-spacing:.2em;font-weight:600;color:#6c6391}
+.diploma h3{font-size:34px;line-height:1;margin:6px 0 2px;color:var(--dc,#7b5cd6)}
+.diploma .lv{font-weight:600;font-size:16px;margin-bottom:14px}
+.diploma .nm{font-family:"Andika",Verdana,sans-serif;font-weight:700;font-size:32px;border-bottom:2px solid #d9cfbd;display:inline-block;min-width:70%;padding:0 10px 4px;margin:6px 0 10px;word-break:break-word}
+.diploma .tx{font-family:"Andika",Verdana,sans-serif;font-weight:700;font-size:16px;margin:0 0 14px}
+.diploma .fc{display:flex;justify-content:center;gap:8px}
+.diploma .fc img{width:54px;height:54px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.diploma .ft{display:flex;justify-content:space-between;margin-top:14px;font-size:13px;color:#6c6391;font-weight:600;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:14px;padding:12px 18px;font-weight:700;font-size:16px;background:var(--ink);color:var(--paper);text-decoration:none}
+.btn.soft{background:var(--card);color:var(--ink);border:2px solid var(--line)}
+.btn.warn{background:var(--no);color:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.note{font-size:14px;color:var(--muted)}
+
+/* genitori */
+.gen{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.55}
+.gen h3{font-family:var(--f-title);font-size:19px;margin:22px 0 6px}
+.gen p,.gen li{max-width:62ch}
+.gen ol{padding-left:22px}
+.switch{display:flex;gap:10px;align-items:center;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 12px}
+.switch input{width:22px;height:22px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+  body *{visibility:hidden}
+  .diploma,.diploma *{visibility:visible}
+  .diploma{position:fixed;inset:0;box-shadow:none;padding:0;background:#fff}
+  .diploma .in{height:100%;display:flex;flex-direction:column;justify-content:center}
+  @page{size:A4 landscape;margin:12mm}
+}
+</style>
+
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+
+<script src="data.js"></script>
+<script>
+(function(){
+"use strict";
+var LV={1:{nome:"FACILE",tot:24},2:{nome:"MEDIO",tot:18},3:{nome:"SFIDA",tot:18}};
+var AMICI=[{k:"nina",n:"NINA",soglia:15},{k:"teo",n:"TEO",soglia:30},{k:"mia",n:"MIA",soglia:45},{k:"pino",n:"PINO",soglia:60}];
+var KEY="ada-prime-letture-v1";
+var S={fatte:{},nome:"",lento:false};
+var prova=false;
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&typeof o==="object"){S.fatte=o.fatte||{};S.nome=o.nome||"";S.lento=!!o.lento;}}}catch(e){}
+function salva(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+var app=document.getElementById("app");
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function fatta(n){return prova||!!S.fatte[n];}
+function totFatte(l){return STORIE.filter(function(s){return (!l||s.l===l)&&fatta(s.n);}).length;}
+function byN(n){return STORIE[n-1];}
+var ICON={
+ play:'<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
+ stop:'<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor"/></svg>',
+ star:'<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>',
+ book:'<svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 5.5c3-1.2 6-1 9 1 3-2 6-2.2 9-1V19c-3-1.2-6-1-9 1-3-2-6-2.2-9-1z M12 6.5V20"/><path d="M16 9.5l2.5 1.5-2.5 1.5z" fill="currentColor"/></svg>',
+ medal:'<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 3h3l1 5M16 3h-3l-1 5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>',
+ lock:'<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>'
+};
+function stickerHTML(a,big){var tot=totFatte(),ok=tot>=a.soglia;return '<div class="sticker'+(ok?"":" locked")+'"><div class="face" data-n="'+a.soglia+'"><img src="img/'+a.k+'.webp" alt="'+(ok?a.n:"adesivo da sbloccare")+'"></div><b>'+a.n+'</b>'+(ok?"SBLOCCATO":a.soglia+" STELLE")+'</div>';}
+
+/* ---------- voce ---------- */
+var synth=("speechSynthesis" in window)?window.speechSynthesis:null;
+var voce=null;
+function scegliVoce(){if(!synth)return;var v=synth.getVoices().filter(function(x){return /^it/i.test(x.lang);});
+ var pref=["Google italiano","Alice","Federica","Elsa","Isabella","Paola","Emma","Luca"];
+ voce=null;for(var i=0;i<pref.length&&!voce;i++){voce=v.find(function(x){return x.name.indexOf(pref[i])>-1;})||null;}
+ if(!voce)voce=v.find(function(x){return x.localService;})||v[0]||null;}
+if(synth){scegliVoce();try{synth.addEventListener("voiceschanged",scegliVoce);}catch(e){synth.onvoiceschanged=scegliVoce;}}
+var L={tok:0,on:false,timers:[]};
+function rate(){return S.lento?0.62:0.85;}
+function clearTimers(){L.timers.forEach(clearTimeout);L.timers=[];}
+function ferma(){L.tok++;L.on=false;clearTimers();if(synth){try{synth.cancel();}catch(e){}}segnaParola(null);segnaRiga(null);aggiornaPlay();}
+function utt(t,r){var u=new SpeechSynthesisUtterance(t.toLowerCase());u.lang="it-IT";if(voce)u.voice=voce;u.rate=r||rate();u.pitch=1.05;return u;}
+function segnaParola(w){var p=app.querySelector(".w.on");if(p)p.classList.remove("on");if(w)w.classList.add("on");}
+function segnaRiga(r){var p=app.querySelector(".testo p.on");if(p)p.classList.remove("on");if(r)r.classList.add("on");}
+function righe(){return Array.prototype.slice.call(app.querySelectorAll(".riga"));}
+function leggiDa(i,tok){
+ var rr=righe();if(tok!==L.tok)return;
+ if(i>=rr.length){L.on=false;segnaParola(null);segnaRiga(null);aggiornaPlay();return;}
+ var r=rr[i],ws=Array.prototype.slice.call(r.querySelectorAll(".w"));segnaRiga(r);
+ var u=utt(r.getAttribute("data-t")),bnd=false;
+ u.onboundary=function(e){if(tok!==L.tok)return;if(e.name&&e.name!=="word")return;bnd=true;clearTimers();
+  var w=ws.find(function(x){return e.charIndex>=+x.dataset.s&&e.charIndex<+x.dataset.e;});if(w)segnaParola(w);};
+ u.onstart=function(){if(tok!==L.tok)return;if(ws[0])segnaParola(ws[0]);
+  L.timers.push(setTimeout(function(){if(bnd||tok!==L.tok)return;
+   /* il telefono non dice quale parola sta leggendo: stima del tempo */
+   var tot=r.getAttribute("data-t").length,ms=(tot*68)/rate(),acc=0;
+   ws.forEach(function(w){var d=(+w.dataset.e-+w.dataset.s+1)/tot*ms;(function(at){L.timers.push(setTimeout(function(){if(tok===L.tok)segnaParola(w);},at));})(acc);acc+=d;});
+  },380));};
+ u.onend=function(){if(tok!==L.tok)return;clearTimers();segnaParola(null);L.timers.push(setTimeout(function(){leggiDa(i+1,tok);},260));};
+ u.onerror=function(e){if(tok!==L.tok)return;if(e&&(e.error==="interrupted"||e.error==="canceled"))return;L.on=false;aggiornaPlay();mostraErroreVoce();};
+ try{synth.speak(u);if(synth.paused)synth.resume();}catch(e){mostraErroreVoce();}
+}
+function avvia(){if(!synth){mostraErroreVoce();return;}ferma();L.on=true;aggiornaPlay();var t=L.tok;leggiDa(0,t);}
+function parolaSola(w){if(!synth)return;ferma();var t=L.tok;segnaParola(w);var u=utt(w.textContent.replace(/[«»"!?.,:;]/g,""),Math.max(0.55,rate()-0.1));u.onend=function(){if(t===L.tok)segnaParola(null);};try{synth.speak(u);}catch(e){}}
+function dici(t){if(!synth)return;try{synth.speak(utt(t,0.95));}catch(e){}}
+function aggiornaPlay(){var b=document.getElementById("play");if(!b)return;b.innerHTML=(L.on?ICON.stop+" FERMA":ICON.play+" ASCOLTA");b.setAttribute("aria-pressed",L.on?"true":"false");}
+function mostraErroreVoce(){var n=document.getElementById("nosup");if(n)n.hidden=false;}
+
+/* ---------- viste ---------- */
+function vHome(){
+ var tot=totFatte();
+ app.innerHTML='<header class="hero"><div class="stars-bg"></div><img src="img/copertina.webp" alt="Copertina del libro Prime Letture"><div><p class="eb">IL BONUS DEL LIBRO</p><h1>PRIME LETTURE</h1><p class="sub">ASCOLTA LE STORIE, LEGGI CON NINA, TEO, MIA E PINO E RACCOGLI LE STELLE.</p></div></header>'+
+ '<div class="bigs"><a class="big" href="#storie-1"><span class="ic lis">'+ICON.book+'</span><span><b>ASCOLTA E LEGGI</b><small>60 STORIE CON LA VOCE CHE LEGGE</small></span><span class="go" aria-hidden="true">›</span></a>'+
+ '<a class="big" href="#stelle"><span class="ic sta">'+ICON.star.replace(/22/g,"34")+'</span><span><b>LE MIE STELLE</b><small>'+tot+' STELLE SU 60 · ADESIVI E DIPLOMI</small></span><span class="go" aria-hidden="true">›</span></a></div>'+
+ '<h2 class="sec">I MIEI ADESIVI</h2><div class="friends">'+AMICI.map(function(a){return stickerHTML(a);}).join("")+'</div>'+
+ '<a class="parents-link" href="#genitori">Per i genitori: come funziona</a>';
+}
+function vElenco(l){
+ app.innerHTML='<div class="bar"><a class="back" href="#home">‹ CASA</a><span class="t">LE STORIE</span></div>'+
+ '<div class="tabs">'+[1,2,3].map(function(k){return '<a class="tab'+(k===l?" on bg"+k:"")+'" href="#storie-'+k+'">LIVELLO '+k+'<small>'+LV[k].nome+' · '+totFatte(k)+'/'+LV[k].tot+'</small></a>';}).join("")+'</div>'+
+ '<div class="list">'+STORIE.filter(function(s){return s.l===l;}).map(function(s){
+  return '<a class="item" href="#storia-'+s.n+'"><img loading="lazy" src="img/s'+String(s.n).padStart(2,"0")+'.webp" alt=""><div class="tx"><div class="n">STORIA '+s.n+'</div><div class="ti">'+esc(s.t)+'</div></div>'+(fatta(s.n)?'<span class="done" title="Stella presa">'+ICON.star+'</span>':'')+'</a>';}).join("")+'</div>';
+}
+function rigaHTML(t,cls){var out="",re=/\S+/g,m;while((m=re.exec(t))){out+='<span class="w" data-s="'+m.index+'" data-e="'+(m.index+m[0].length)+'">'+esc(m[0])+'</span> ';}return '<p class="riga'+(cls?" "+cls:"")+'" data-t="'+esc(t)+'">'+out.trim()+'</p>';}
+function vStoria(n){
+ var s=byN(n);if(!s){location.hash="#home";return;}
+ var prev=n>1?n-1:null,next=n<60?n+1:null;
+ app.innerHTML='<div class="l'+s.l+'"><div class="bar"><a class="back" href="#storie-'+s.l+'">‹ STORIE</a><span class="t">STORIA '+s.n+'</span><span class="pill bg'+s.l+'">LIVELLO '+s.l+'</span></div>'+
+ '<div class="ill"><img src="img/s'+String(n).padStart(2,"0")+'.webp" alt="Illustrazione della storia '+esc(s.t)+'"></div>'+
+ '<h2 class="st">'+esc(s.t)+'</h2>'+
+ '<p class="nosup" id="nosup" hidden>Su questo dispositivo la voce non parte. Controlla il volume e, su iPhone, che il tasto silenzioso sia spento. Se non funziona ancora, prova con Chrome o Safari aggiornati.</p>'+
+ '<div class="ctr"><button class="play bg'+s.l+'" id="play" type="button"></button><div class="seg" role="group" aria-label="Velocità della voce"><button type="button" id="vn" aria-pressed="'+(!S.lento)+'">NORMALE</button><button type="button" id="vl" aria-pressed="'+S.lento+'">PIANO</button></div></div>'+
+ '<p class="hint">Tocca una parola per sentirla da sola.</p>'+
+ '<div class="testo">'+s.r.map(function(r){return rigaHTML(r);}).join("")+'</div>'+
+ '<div class="dom"><p class="q">'+rigaHTML(s.q,"").replace('<p class="riga"','<span class="riga"').replace(/<\/p>$/,"</span>")+'</p><div class="opts">'+
+ s.o.map(function(o,i){return '<button type="button" class="opt'+(fatta(n)&&i===s.a?" ok":"")+'" data-i="'+i+'"><span class="bx"></span>'+esc(o)+'</button>';}).join("")+'</div>'+
+ '<div class="fb'+(fatta(n)?" ok":"")+'" id="fb">'+(fatta(n)?"HAI GIÀ PRESO LA STELLA DI QUESTA STORIA!":"")+'</div><div id="prize"></div></div>'+
+ '<div class="pn">'+(prev?'<a class="btn soft" href="#storia-'+prev+'">‹ STORIA '+prev+'</a>':'<span></span>')+(next?'<a class="btn soft" href="#storia-'+next+'">STORIA '+next+' ›</a>':'<a class="btn" href="#stelle">LE MIE STELLE</a>')+'</div></div>';
+ aggiornaPlay();
+ document.getElementById("play").onclick=function(){if(L.on)ferma();else avvia();};
+ document.getElementById("vn").onclick=function(){S.lento=false;salva();this.setAttribute("aria-pressed","true");document.getElementById("vl").setAttribute("aria-pressed","false");if(L.on)avvia();};
+ document.getElementById("vl").onclick=function(){S.lento=true;salva();this.setAttribute("aria-pressed","true");document.getElementById("vn").setAttribute("aria-pressed","false");if(L.on)avvia();};
+ app.querySelectorAll(".w").forEach(function(w){w.onclick=function(){parolaSola(w);};});
+ app.querySelectorAll(".opt").forEach(function(b){b.onclick=function(){rispondi(s,+b.dataset.i,b);};});
+ if(!synth){document.getElementById("nosup").hidden=false;}
+}
+function rispondi(s,i,b){
+ var fb=document.getElementById("fb");
+ if(i===s.a){
+  ferma();
+  app.querySelectorAll(".opt").forEach(function(x){x.classList.remove("no");});b.classList.add("ok");
+  var prima=totFatte(),nuova=!S.fatte[s.n];S.fatte[s.n]=true;salva();var dopo=totFatte();
+  fb.className="fb ok";fb.textContent=nuova?"BRAVO! HAI PRESO UNA STELLA. ORA NE HAI "+dopo+".":"GIUSTO! LA STELLA È GIÀ TUA.";
+  dici(nuova?"Bravo! Hai preso una stella!":"Giusto!");
+  var a=AMICI.find(function(x){return prima<x.soglia&&dopo>=x.soglia;});
+  var lvFin=nuova&&totFatte(s.l)===LV[s.l].tot;
+  var pz=document.getElementById("prize");
+  if(a)pz.innerHTML='<div class="prize"><img src="img/'+a.k+'.webp" alt=""><div><b>HAI SBLOCCATO L\'ADESIVO DI '+a.n+'!</b><br><a href="#stelle" style="color:var(--moon)">VAI ALLE TUE STELLE ›</a></div></div>';
+  if(lvFin)pz.innerHTML+='<div class="prize"><span class="pill bg'+s.l+'">LIVELLO '+s.l+'</span><div><b>HAI FINITO IL LIVELLO '+s.l+'!</b><br><a href="#diploma-'+s.l+'" style="color:var(--moon)">PRENDI IL TUO DIPLOMA ›</a></div></div>';
+ }else{
+  b.classList.remove("no");void b.offsetWidth;b.classList.add("no");
+  fb.className="fb no";fb.textContent="QUASI! RILEGGI LA STORIA E PROVA ANCORA.";
+ }
+}
+function vStelle(){
+ var tot=totFatte();
+ var dips=[1,2,3].map(function(k){var f=totFatte(k),ok=f>=LV[k].tot;
+  return '<a class="dip'+(ok?"":" locked")+'" href="'+(ok?"#diploma-"+k:"#storie-"+k)+'"><span class="md '+(ok?"bg"+k:"lk")+'">'+(ok?ICON.medal:ICON.lock)+'</span><span><b>DIPLOMA LIVELLO '+k+'</b><small>'+(ok?"PRONTO DA APRIRE":"MANCANO "+(LV[k].tot-f)+" STORIE")+'</small></span></a>';}).join("");
+ var okT=tot>=60;
+ dips+='<a class="dip'+(okT?"":" locked")+'" href="'+(okT?"#diploma-tutto":"#storie-1")+'"><span class="md" style="background:'+(okT?"var(--moon);color:var(--night)":"var(--lock);color:var(--muted)")+'">'+(okT?ICON.star:ICON.lock)+'</span><span><b>GRANDE DIPLOMA DI LETTORE</b><small>'+(okT?"HAI LETTO TUTTE LE 60 STORIE!":"MANCANO "+(60-tot)+" STORIE")+'</small></span></a>';
+ app.innerHTML='<div class="bar"><a class="back" href="#home">‹ CASA</a><span class="t">LE MIE STELLE</span></div>'+
+ '<div class="count"><div class="stars-bg"></div><div class="num">'+tot+'<small>/60</small></div><p>'+(tot===0?"RISPONDI ALLA DOMANDA DI UNA STORIA PER PRENDERE LA PRIMA STELLA!":tot<60?"OGNI DOMANDA GIUSTA È UNA STELLA. CONTINUA COSÌ!":"HAI TUTTE LE STELLE. SEI UN LETTORE VERO!")+'</p></div>'+
+ (prova?'<p class="note">Modalità prova attiva: tutto è sbloccato solo per vedere. Si spegne in “Per i genitori”.</p>':'')+
+ '<div class="lvbars">'+[1,2,3].map(function(k){var f=totFatte(k);return '<div class="lvb"><span>LIVELLO '+k+'</span><span class="tr"><i class="bg'+k+'" style="width:'+(f/LV[k].tot*100)+'%"></i></span><span class="v">'+f+'/'+LV[k].tot+'</span></div>';}).join("")+'</div>'+
+ '<h2 class="sec">ADESIVI</h2><div class="friends">'+AMICI.map(function(a){return stickerHTML(a);}).join("")+'</div>'+
+ '<h2 class="sec">DIPLOMI</h2><div class="dips">'+dips+'</div>'+
+ '<h2 class="sec">LE 60 STORIE</h2><div class="dots">'+STORIE.map(function(s){return '<a class="dot'+(fatta(s.n)?" y":"")+'" href="#storia-'+s.n+'" aria-label="Storia '+s.n+(fatta(s.n)?", stella presa":"")+'">'+s.n+'</a>';}).join("")+'</div>';
+}
+function vDiploma(k){
+ var tutto=k==="tutto";k=tutto?0:+k;
+ var ok=tutto?totFatte()>=60:(LV[k]&&totFatte(k)>=LV[k].tot);
+ if(!ok){location.hash="#stelle";return;}
+ var col=tutto?"#c9a000":["","#22a593","#e05b8f","#7b5cd6"][k];
+ var oggi=new Date().toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"}).toUpperCase();
+ var inFrame=false;try{inFrame=window.self!==window.top;}catch(e){inFrame=true;}
+ app.innerHTML='<div class="bar"><a class="back" href="#stelle">‹ STELLE</a><span class="t">IL MIO DIPLOMA</span></div>'+
+ '<label class="field" for="nome">SCRIVI IL TUO NOME<input id="nome" maxlength="24" autocomplete="off" value="'+esc(S.nome)+'"></label>'+
+ '<div class="diploma" style="--dc:'+col+'"><div class="in"><div class="k">PRIME LETTURE · ADA BRUNELLI</div><h3>'+(tutto?"GRANDE DIPLOMA":"DIPLOMA")+'</h3><div class="lv">'+(tutto?"DI LETTORE VERO":"LIVELLO "+k+" · "+LV[k].nome)+'</div>'+
+ '<div class="k">QUESTO DIPLOMA È DI</div><div class="nm" id="dn">'+(esc(S.nome)||"&nbsp;")+'</div>'+
+ '<p class="tx">'+(tutto?"HA LETTO TUTTE LE 60 STORIE E HA RISPOSTO A TUTTE LE DOMANDE!":"HA LETTO LE "+LV[k].tot+" STORIE DEL LIVELLO "+k+" E HA RISPOSTO A TUTTE LE DOMANDE!")+'</p>'+
+ '<div class="fc">'+AMICI.map(function(a){return '<img src="img/'+a.k+'.webp" alt="'+a.n+'">';}).join("")+'</div>'+
+ '<div class="ft"><span>'+oggi+'</span><span>NINA, TEO, MIA E PINO</span></div></div></div>'+
+ '<div class="row">'+(inFrame?'<p class="note">Nell’app pubblicata qui compare il tasto per stampare il diploma.</p>':'<button class="btn" id="stampa" type="button">STAMPA IL DIPLOMA</button>')+'</div>';
+ var inp=document.getElementById("nome");
+ inp.oninput=function(){S.nome=inp.value.toUpperCase().slice(0,24);salva();document.getElementById("dn").textContent=S.nome||" ";};
+ var st=document.getElementById("stampa");if(st)st.onclick=function(){window.print();};
+}
+function vGenitori(){
+ app.innerHTML='<div class="bar"><a class="back" href="#home">‹ CASA</a><span class="t">PER I GENITORI</span></div><div class="gen">'+
+ '<p>Questa app accompagna il libro <b>Prime Letture in Stampatello Maiuscolo</b> di Ada Brunelli. Le storie hanno lo stesso numero che trovate nel libro.</p>'+
+ '<h3>Come si usa</h3><ol><li>Il bambino sceglie la storia che sta leggendo nel libro.</li><li><b>Ascolta</b>: una voce legge la storia e colora ogni parola mentre la dice. Il bambino segue con il dito sul libro o sullo schermo. Con <b>Piano</b> la voce va più lenta.</li><li>Toccando una parola, la sente da sola: utile per le parole difficili.</li><li>Alla fine risponde alla domanda. Ogni risposta giusta vale una stella.</li><li>Con le stelle sblocca gli adesivi di Nina, Teo, Mia e Pino e, a fine livello, un diploma con il suo nome da stampare.</li></ol>'+
+ '<h3>Un consiglio</h3><p>Prima ascoltate la storia insieme, poi lasciate che il bambino la legga da solo nel libro. Riascoltare una storia già letta aiuta la scioltezza.</p>'+
+ '<h3>La voce</h3><p>La voce è quella del vostro telefono o computer, quindi cambia da un dispositivo all’altro. Se non sentite nulla, alzate il volume e, su iPhone, spegnete il tasto silenzioso. '+(voce?'Voce in uso: '+esc(voce.name)+'.':(synth?'Non abbiamo trovato una voce italiana: potete aggiungerla nelle impostazioni del dispositivo (Lingua e sintesi vocale).':'Questo browser non ha la sintesi vocale: provate con Chrome o Safari aggiornati.'))+'</p>'+
+ '<h3>Privacy</h3><p>L’app non chiede email, non usa pubblicità e non traccia nulla. Stelle e nome restano solo su questo dispositivo.</p>'+
+ '<h3>Strumenti</h3><label class="switch" for="prova"><input type="checkbox" id="prova"'+(prova?" checked":"")+'> Mostra tutto sbloccato (solo per vedere adesivi e diplomi, non salva nulla)</label>'+
+ '<div class="row"><button class="btn warn" type="button" id="reset">Azzera le stelle</button></div><div id="conf"></div></div>';
+ document.getElementById("prova").onchange=function(){prova=this.checked;};
+ document.getElementById("reset").onclick=function(){document.getElementById("conf").innerHTML='<p>Vuoi davvero cancellare tutte le stelle e il nome? Non si può annullare.</p><div class="row"><button class="btn warn" type="button" id="si">Sì, azzera</button><button class="btn soft" type="button" id="no">No</button></div>';
+  document.getElementById("si").onclick=function(){S.fatte={};S.nome="";salva();document.getElementById("conf").innerHTML='<p>Fatto: le stelle sono a zero.</p>';};
+  document.getElementById("no").onclick=function(){document.getElementById("conf").innerHTML="";};};
+}
+function route(){
+ ferma();
+ var h=(location.hash||"#home").slice(1),m;
+ if((m=h.match(/^storia-(\d+)$/)))vStoria(+m[1]);
+ else if((m=h.match(/^storie-([123])$/)))vElenco(+m[1]);
+ else if(h==="stelle")vStelle();
+ else if((m=h.match(/^diploma-([123]|tutto)$/)))vDiploma(m[1]);
+ else if(h==="genitori")vGenitori();
+ else vHome();
+ window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
+route();
+})();
+</script>
+
+</body>
+</html>
