@@ -173,6 +173,7 @@ h2.st{font-size:27px;line-height:1.1;margin:0 0 12px;text-wrap:balance;font-weig
 <main id="app" aria-live="polite"></main>
 
 <script src="data.js"></script>
+<script src="audio.js"></script>
 <script>
 (function(){
 "use strict";
@@ -209,10 +210,10 @@ if(synth){scegliVoce();try{synth.addEventListener("voiceschanged",scegliVoce);}c
 var L={tok:0,on:false,timers:[]};
 function rate(){return S.lento?0.62:0.85;}
 function clearTimers(){L.timers.forEach(clearTimeout);L.timers=[];}
-function ferma(){L.tok++;L.on=false;clearTimers();if(synth){try{synth.cancel();}catch(e){}}segnaParola(null);segnaRiga(null);aggiornaPlay();}
+function ferma(){L.tok++;L.on=false;clearTimers();if(L.raf){cancelAnimationFrame(L.raf);L.raf=0;}if(L.audio){try{L.audio.pause();}catch(e){}L.audio=null;}if(synth){try{synth.cancel();}catch(e){}}segnaParola(null);segnaRiga(null);aggiornaPlay();}
 function utt(t,r){var u=new SpeechSynthesisUtterance(t.toLowerCase());u.lang="it-IT";if(voce)u.voice=voce;u.rate=r||rate();u.pitch=1.05;return u;}
 function segnaParola(w){var p=app.querySelector(".w.on");if(p)p.classList.remove("on");if(w)w.classList.add("on");}
-function segnaRiga(r){var p=app.querySelector(".testo p.on");if(p)p.classList.remove("on");if(r)r.classList.add("on");}
+function segnaRiga(r){var p=app.querySelector(".riga.on");if(p)p.classList.remove("on");if(r)r.classList.add("on");}
 function righe(){return Array.prototype.slice.call(app.querySelectorAll(".riga"));}
 function leggiDa(i,tok){
  var rr=righe();if(tok!==L.tok)return;
@@ -231,11 +232,41 @@ function leggiDa(i,tok){
  u.onerror=function(e){if(tok!==L.tok)return;if(e&&(e.error==="interrupted"||e.error==="canceled"))return;L.on=false;aggiornaPlay();mostraErroreVoce();};
  try{synth.speak(u);if(synth.paused)synth.resume();}catch(e){mostraErroreVoce();}
 }
-function avvia(){if(!synth){mostraErroreVoce();return;}ferma();L.on=true;aggiornaPlay();var t=L.tok;leggiDa(0,t);}
-function parolaSola(w){if(!synth)return;ferma();var t=L.tok;segnaParola(w);var u=utt(w.textContent.replace(/[«»"!?.,:;]/g,""),Math.max(0.55,rate()-0.1));u.onend=function(){if(t===L.tok)segnaParola(null);};try{synth.speak(u);}catch(e){}}
-function dici(t){if(!synth)return;try{synth.speak(utt(t,0.95));}catch(e){}}
+function avvia(){if(tempi(curN)){avviaAudio(curN);return;}if(!synth){mostraErroreVoce();return;}ferma();L.on=true;aggiornaPlay();var t=L.tok;leggiDa(0,t);}
+function parolaSola(w){if(tempi(curN)&&parolaAudio(w))return;if(!synth)return;ferma();var t=L.tok;segnaParola(w);var u=utt(w.textContent.replace(/[«»"!?.,:;]/g,""),Math.max(0.55,rate()-0.1));u.onend=function(){if(t===L.tok)segnaParola(null);};try{synth.speak(u);}catch(e){}}
+function dici(t){if(!synth||tempi(curN))return;try{synth.speak(utt(t,0.95));}catch(e){}}
 function aggiornaPlay(){var b=document.getElementById("play");if(!b)return;b.innerHTML=(L.on?ICON.stop+" FERMA":ICON.play+" ASCOLTA");b.setAttribute("aria-pressed",L.on?"true":"false");}
 function mostraErroreVoce(){var n=document.getElementById("nosup");if(n)n.hidden=false;}
+
+
+/* ---------- audio registrato (voce Fola) ---------- */
+var curN=0;
+function pad2(n){return String(n).padStart(2,"0");}
+function tempi(n){return (window.AUDIO&&window.AUDIO[n])||null;}
+function pesi(ws){return ws.map(function(w){return w.textContent.replace(/[«»"!?.,:;]/g,"").length+2;});}
+function parolaAl(ws,seg,t){if(!ws.length)return null;var p=pesi(ws),tot=p.reduce(function(a,b){return a+b;},0),x=(t-seg[0])/Math.max(0.1,seg[1]-seg[0])*tot,acc=0;for(var i=0;i<ws.length;i++){acc+=p[i];if(x<acc)return ws[i];}return ws[ws.length-1];}
+function nuovoAudio(n){var a=new Audio("audio/storia"+pad2(n)+".mp3");a.preload="auto";try{a.preservesPitch=true;}catch(e){}return a;}
+function avviaAudio(n){
+ ferma();var T=tempi(n),tok=L.tok,rr=righe(),a=nuovoAudio(n);
+ a.playbackRate=S.lento?0.8:1;L.audio=a;L.on=true;aggiornaPlay();
+ a.onended=function(){if(tok!==L.tok)return;L.on=false;L.audio=null;if(L.raf)cancelAnimationFrame(L.raf);segnaParola(null);segnaRiga(null);aggiornaPlay();};
+ a.onerror=function(){if(tok!==L.tok)return;if(window.AUDIO)delete window.AUDIO[n];ferma();avvia();};
+ var pr=a.play();if(pr&&pr.catch)pr.catch(function(){if(tok===L.tok){L.on=false;aggiornaPlay();}});
+ (function loop(){if(tok!==L.tok)return;var t=a.currentTime,i=-1;
+  for(var k=0;k<T.length;k++){if(t>=T[k][0]-0.05&&t<=T[k][1]+0.12){i=k;break;}}
+  if(i<0)segnaParola(null);else{var r=rr[i];if(r){segnaRiga(r);segnaParola(parolaAl(Array.prototype.slice.call(r.querySelectorAll(".w")),T[i],t));}}
+  L.raf=requestAnimationFrame(loop);})();
+}
+function parolaAudio(w){
+ var T=tempi(curN),rr=righe(),r=w.closest(".riga"),i=rr.indexOf(r);if(!T||i<0||!T[i])return false;
+ var ws=Array.prototype.slice.call(r.querySelectorAll(".w")),p=pesi(ws),tot=p.reduce(function(a,b){return a+b;},0),j=ws.indexOf(w),acc=0;
+ for(var k=0;k<j;k++)acc+=p[k];var d=T[i][1]-T[i][0],s0=Math.max(0,T[i][0]+acc/tot*d-0.08),s1=T[i][0]+(acc+p[j])/tot*d+0.1;
+ ferma();var tok=L.tok,a=nuovoAudio(curN);L.audio=a;segnaParola(w);
+ var go=function(){try{a.currentTime=s0;}catch(e){}var pr=a.play();if(pr&&pr.catch)pr.catch(function(){});
+  (function chk(){if(tok!==L.tok)return;if(a.currentTime>=s1){a.pause();segnaParola(null);L.audio=null;return;}L.raf=requestAnimationFrame(chk);})();};
+ if(a.readyState>=1)go();else a.addEventListener("loadedmetadata",go,{once:true});
+ return true;
+}
 
 /* ---------- viste ---------- */
 function vHome(){
@@ -254,11 +285,11 @@ function vElenco(l){
 }
 function rigaHTML(t,cls){var out="",re=/\S+/g,m;while((m=re.exec(t))){out+='<span class="w" data-s="'+m.index+'" data-e="'+(m.index+m[0].length)+'">'+esc(m[0])+'</span> ';}return '<p class="riga'+(cls?" "+cls:"")+'" data-t="'+esc(t)+'">'+out.trim()+'</p>';}
 function vStoria(n){
- var s=byN(n);if(!s){location.hash="#home";return;}
+ var s=byN(n);if(!s){location.hash="#home";return;}curN=n;
  var prev=n>1?n-1:null,next=n<60?n+1:null;
  app.innerHTML='<div class="l'+s.l+'"><div class="bar"><a class="back" href="#storie-'+s.l+'">‹ STORIE</a><span class="t">STORIA '+s.n+'</span><span class="pill bg'+s.l+'">LIVELLO '+s.l+'</span></div>'+
  '<div class="ill"><img src="img/s'+String(n).padStart(2,"0")+'.webp" alt="Illustrazione della storia '+esc(s.t)+'"></div>'+
- '<h2 class="st">'+esc(s.t)+'</h2>'+
+ '<h2 class="st">'+rigaHTML(s.t).replace('<p class="riga"','<span class="riga"').replace(/<\/p>$/,"</span>")+'</h2>'+
  '<p class="nosup" id="nosup" hidden>Su questo dispositivo la voce non parte. Controlla il volume e, su iPhone, che il tasto silenzioso sia spento. Se non funziona ancora, prova con Chrome o Safari aggiornati.</p>'+
  '<div class="ctr"><button class="play bg'+s.l+'" id="play" type="button"></button><div class="seg" role="group" aria-label="Velocità della voce"><button type="button" id="vn" aria-pressed="'+(!S.lento)+'">NORMALE</button><button type="button" id="vl" aria-pressed="'+S.lento+'">PIANO</button></div></div>'+
  '<p class="hint">Tocca una parola per sentirla da sola.</p>'+
@@ -269,8 +300,8 @@ function vStoria(n){
  '<div class="pn">'+(prev?'<a class="btn soft" href="#storia-'+prev+'">‹ STORIA '+prev+'</a>':'<span></span>')+(next?'<a class="btn soft" href="#storia-'+next+'">STORIA '+next+' ›</a>':'<a class="btn" href="#stelle">LE MIE STELLE</a>')+'</div></div>';
  aggiornaPlay();
  document.getElementById("play").onclick=function(){if(L.on)ferma();else avvia();};
- document.getElementById("vn").onclick=function(){S.lento=false;salva();this.setAttribute("aria-pressed","true");document.getElementById("vl").setAttribute("aria-pressed","false");if(L.on)avvia();};
- document.getElementById("vl").onclick=function(){S.lento=true;salva();this.setAttribute("aria-pressed","true");document.getElementById("vn").setAttribute("aria-pressed","false");if(L.on)avvia();};
+ document.getElementById("vn").onclick=function(){S.lento=false;salva();this.setAttribute("aria-pressed","true");document.getElementById("vl").setAttribute("aria-pressed","false");if(L.audio)L.audio.playbackRate=1;else if(L.on)avvia();};
+ document.getElementById("vl").onclick=function(){S.lento=true;salva();this.setAttribute("aria-pressed","true");document.getElementById("vn").setAttribute("aria-pressed","false");if(L.audio)L.audio.playbackRate=0.8;else if(L.on)avvia();};
  app.querySelectorAll(".w").forEach(function(w){w.onclick=function(){parolaSola(w);};});
  app.querySelectorAll(".opt").forEach(function(b){b.onclick=function(){rispondi(s,+b.dataset.i,b);};});
  if(!synth){document.getElementById("nosup").hidden=false;}
@@ -331,7 +362,7 @@ function vGenitori(){
  '<p>Questa app accompagna il libro <b>Prime Letture in Stampatello Maiuscolo</b> di Ada Brunelli. Le storie hanno lo stesso numero che trovate nel libro.</p>'+
  '<h3>Come si usa</h3><ol><li>Il bambino sceglie la storia che sta leggendo nel libro.</li><li><b>Ascolta</b>: una voce legge la storia e colora ogni parola mentre la dice. Il bambino segue con il dito sul libro o sullo schermo. Con <b>Piano</b> la voce va più lenta.</li><li>Toccando una parola, la sente da sola: utile per le parole difficili.</li><li>Alla fine risponde alla domanda. Ogni risposta giusta vale una stella.</li><li>Con le stelle sblocca gli adesivi di Nina, Teo, Mia e Pino e, a fine livello, un diploma con il suo nome da stampare.</li></ol>'+
  '<h3>Un consiglio</h3><p>Prima ascoltate la storia insieme, poi lasciate che il bambino la legga da solo nel libro. Riascoltare una storia già letta aiuta la scioltezza.</p>'+
- '<h3>La voce</h3><p>La voce è quella del vostro telefono o computer, quindi cambia da un dispositivo all’altro. Se non sentite nulla, alzate il volume e, su iPhone, spegnete il tasto silenzioso. '+(voce?'Voce in uso: '+esc(voce.name)+'.':(synth?'Non abbiamo trovato una voce italiana: potete aggiungerla nelle impostazioni del dispositivo (Lingua e sintesi vocale).':'Questo browser non ha la sintesi vocale: provate con Chrome o Safari aggiornati.'))+'</p>'+
+ '<h3>La voce</h3><p>Le storie sono lette da una voce registrata, uguale su tutti i dispositivi. Se una storia non ha ancora l’audio o la connessione non lo carica, l’app usa la voce del vostro telefono o computer. Se non sentite nulla, alzate il volume e, su iPhone, spegnete il tasto silenzioso. '+(voce?'Voce in uso: '+esc(voce.name)+'.':(synth?'Non abbiamo trovato una voce italiana: potete aggiungerla nelle impostazioni del dispositivo (Lingua e sintesi vocale).':'Questo browser non ha la sintesi vocale: provate con Chrome o Safari aggiornati.'))+'</p>'+
  '<h3>Privacy</h3><p>L’app non chiede email, non usa pubblicità e non traccia nulla. Stelle e nome restano solo su questo dispositivo.</p>'+
  '<h3>Strumenti</h3><label class="switch" for="prova"><input type="checkbox" id="prova"'+(prova?" checked":"")+'> Mostra tutto sbloccato (solo per vedere adesivi e diplomi, non salva nulla)</label>'+
  '<div class="row"><button class="btn warn" type="button" id="reset">Azzera le stelle</button></div><div id="conf"></div></div>';
